@@ -5,14 +5,6 @@
 2. [Preprocessing](#2-preprocessing-data)
 3. [Model Performance](#3-model-performance-and-summary)
 
-## How to run
-
-1. **Download the Repository**: Clone or download the repository from GitHub to your local machine.
-
-2. **Install Requirements**: Run `pip install -r requirements.txt` to install the required Python packages listed in `requirements.txt`.
-
-3. **Run the Main Script**: Execute the main script of the project by running `python main.py`.
-
 ## Motivation
 Gain insights about customer by visualization customers profile, contracts, and services using power BI. And then perform an SVM to predict the churn based on customer's data.
 
@@ -44,12 +36,25 @@ The features are:
 
 **Link:** [https://www.kaggle.com/datasets/ahsan81/hotel-reservations-classification-dataset/data](https://www.kaggle.com/datasets/blastchar/telco-customer-churn)
 
-### Summary of Findings
+## How to run
 
-- Model 2 improved upon Model 1 with the use of Bayesian Optimization.
-- Model 3 improved upon Model 2 on the testing set but worsen for the validation set due to bad assumption in feature selection.
-- Only a small percentage increment in performance but in real-world settings with thousands of bookings, even small percentage improvements in predicting customer cancellations can have a substantial impact.
-- Future finetuning could be explored
+1. **Download the Repository**: Clone or download the repository from GitHub to your local machine.
+
+2. **Install Requirements**: Run `pip install -r requirements.txt` to install the required Python packages listed in `requirements.txt`.
+
+3. **Run the Main Script**: Execute the main script of the project by running `python main.py`.
+
+## Files
+
+1. **Images/**: Directory for image outputs.
+2. **.gitattributes**: Git configuration file for repository settings.
+3. **README.md**: Documentation file for the project overview and instructions.
+4. **Telco-Customer-Data.csv**: Dataset file containing telco customer data.
+5. **data_exploration.py**: Python script for initial data analysis.
+6. **insights.pbix**: Power BI report file for data visualization.
+7. **insights.pdf**: PDF export of the Power BI report.
+8. **main.py**: Python script implementing SVM for churn prediction.
+9. **requirements.txt**: List of Python dependencies for the project.
 
 ## 1. Insight
 
