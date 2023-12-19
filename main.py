@@ -1,13 +1,16 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.metrics import classification_report
 from imblearn.over_sampling import SMOTE
 from imblearn.pipeline import Pipeline as ImbPipeline
 from bayes_opt import BayesianOptimization
-import shap
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+import numpy as np
+from sklearn.model_selection import cross_val_score
 
 def load_and_preprocess_data(filepath):
     df = pd.read_csv(filepath)
@@ -16,7 +19,7 @@ def load_and_preprocess_data(filepath):
     return df
 
 def split_data(df):
-    X = df.drop(['Churn', 'gender', 'PhoneService', 'customerID'], axis=1)
+    X = df.drop(['Churn', 'gender', 'PhoneService'], axis=1)
     y = df['Churn']
     return train_test_split(X, y, test_size=0.2, random_state=1221)
 
@@ -37,26 +40,31 @@ def build_preprocessor():
             ('cat', categorical_transformer, categorical_features)
         ])
 
-def optimize_hyperparameters(X_train, y_train, X_test, y_test):
-    def rf_evaluate(n_estimators, max_depth):
+def optimize_hyperparameters(X_train, y_train):
+    def svm_evaluate(C, gamma):
+        kernel = 'rbf'
+
         model = ImbPipeline(steps=[
-            ('preprocessor', build_preprocessor()),
+            ('preprocessor', build_preprocessor()),  # Assuming build_preprocessor() is defined elsewhere
             ('smote', SMOTE(random_state=1221)),
-            ('classifier', RandomForestClassifier(
-                n_estimators=int(n_estimators),
-                max_depth=int(max_depth),
-                random_state=1221))
+            ('classifier', SVC(C=C, gamma=gamma, kernel=kernel, random_state=1221))
         ])
-        model.fit(X_train, y_train)
-        return model.score(X_test, y_test)
+        f1 = cross_val_score(model, X_train, y_train, scoring='f1', cv=5).mean()
+        return f1
 
     optimizer = BayesianOptimization(
-        f=rf_evaluate,
-        pbounds={'n_estimators': (10, 200), 'max_depth': (5, 30)},
+        f=svm_evaluate,
+        pbounds={
+            'C': (0.01, 20),
+            'gamma': (0.0001, 1),
+        },
         random_state=1221
     )
-    optimizer.maximize(init_points=2, n_iter=10)
-    return {k: int(v) for k, v in optimizer.max['params'].items()}
+    optimizer.maximize(init_points=10, n_iter=20)
+
+    best_params = optimizer.max['params']
+    best_params['kernel'] = 'rbf'
+    return best_params
 
 def evaluate_model(model, X_test, y_test):
     y_pred = model.predict(X_test)
@@ -67,18 +75,20 @@ def main():
     df = load_and_preprocess_data(file_path)
     X_train, X_test, y_train, y_test = split_data(df)
 
-    best_params = optimize_hyperparameters(X_train, y_train, X_test, y_test)
+    best_params = optimize_hyperparameters(X_train, y_train)
     print("Best parameters:", best_params)
 
+    preprocessor = build_preprocessor()
+    X_train_preprocessed = preprocessor.fit_transform(X_train)
+    X_test_preprocessed = preprocessor.transform(X_test)
+
     model_best = ImbPipeline(steps=[
-        ('preprocessor', build_preprocessor()),
         ('smote', SMOTE(random_state=1221)),
-        ('classifier', RandomForestClassifier(
-            **best_params,
-            random_state=1221))
+        ('classifier', SVC(**best_params, random_state=1221))
     ])
-    model_best.fit(X_train, y_train)
-    evaluate_model(model_best, X_test, y_test)
+    model_best.fit(X_train_preprocessed, y_train)
+
+    evaluate_model(model_best, X_test_preprocessed, y_test)
 
 if __name__ == "__main__":
     main()
